@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+coverage
+*.log
+*.pdf
+*.postman_collection.json
+*.postman_environment.json
+postman/
+Postman/
