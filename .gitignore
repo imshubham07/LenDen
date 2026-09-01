@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+*.log
+
+# local documents and API testing exports
+*.pdf
+*.postman_collection.json
+*.postman_environment.json
+postman/
+Postman/
+
+# nested app dependencies/build output
+Backend/node_modules/
+Backend/dist/
+Mobile_App/node_modules/
+Mobile_App/.expo/
+Mobile_App/dist/
+Mobile_App/web-build/
+Mobile_app/node_modules/
+Mobile_app/.next/

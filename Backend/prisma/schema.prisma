@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LoanStatus {
+  ACTIVE
+  CLOSED
+}
+
+model Admin {
+  id           String     @id @default(cuid())
+  name         String
+  mobile       String     @unique
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  borrowers    Borrower[]
+  loans        Loan[]
+  payments     Payment[]
+}
+
+model Borrower {
+  id                String    @id @default(cuid())
+  adminId           String
+  name              String
+  fatherOrHusband   String
+  documentNote      String?
+  village           String
+  mobile            String
+  monthlyPercentage Decimal   @db.Decimal(5, 2)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  admin             Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  loans             Loan[]
+  payments          Payment[]
+
+  @@index([adminId])
+  @@index([name])
+  @@index([mobile])
+  @@unique([adminId, mobile])
+}
+
+model Loan {
+  id          String     @id @default(cuid())
+  adminId     String
+  borrowerId  String
+  amount      Decimal    @db.Decimal(12, 2)
+  purpose     String
+  givenDate   DateTime
+  guarantor   String?
+  status      LoanStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  admin       Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  borrower    Borrower   @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([borrowerId])
+  @@index([givenDate])
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  adminId     String
+  borrowerId  String
+  amount      Decimal   @db.Decimal(12, 2)
+  paymentDate DateTime
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  admin       Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  borrower    Borrower  @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([borrowerId])
+  @@index([paymentDate])
+}
