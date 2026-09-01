@@ -12,6 +12,7 @@ AGENTS.md
 *.pdf
 *.postman_collection.json
 *.postman_environment.json
+POSTMAN_TESTING.md
 postman/
 Postman/
 
