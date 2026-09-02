@@ -13,7 +13,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#061B35",
-        "foregroundImage": "./src/assets/images/logWithoutBG.png"
+        "foregroundImage": "./src/assets/images/AdaptiveIconForeground.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -27,8 +27,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#061B35",
-          "image": "./src/assets/images/logWithoutBG.png",
-          "imageWidth": 180
+          "image": "./src/assets/images/AdaptiveIconForeground.png",
+          "imageWidth": 140
         }
       ]
     ],
