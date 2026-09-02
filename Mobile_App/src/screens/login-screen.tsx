@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -40,7 +41,11 @@ export function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}>
         <View style={styles.header}>
-          <ThemedText style={styles.brand}>LenDen</ThemedText>
+          <Image
+            source={require('../assets/images/logWithoutBG.png')}
+            resizeMode="contain"
+            style={styles.logo}
+          />
           <ThemedText style={styles.subtitle}>Admin loan ledger</ThemedText>
         </View>
 
@@ -102,17 +107,17 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
-    marginBottom: 40,
+    alignItems: 'center',
+    marginBottom: 34,
   },
-  brand: {
-    color: '#17211A',
-    fontSize: 44,
-    fontWeight: '800',
-    lineHeight: 52,
+  logo: {
+    width: 220,
+    height: 180,
   },
   subtitle: {
-    color: '#66706A',
+    color: '#113B68',
     fontSize: 16,
+    fontWeight: '700',
     marginTop: 6,
   },
   form: {
