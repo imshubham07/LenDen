@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -36,70 +37,83 @@ export function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}>
-        <View style={styles.header}>
-          <Image
-            source={require('../assets/images/logWithoutBG.png')}
-            resizeMode="contain"
-            style={styles.logo}
-          />
-          <ThemedText style={styles.subtitle}>Admin loan ledger</ThemedText>
-        </View>
+    <ImageBackground
+      source={require('../assets/images/ScreenBG.png')}
+      resizeMode="cover"
+      style={styles.background}>
+      <View style={styles.overlay}>
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.container}>
+            <View style={styles.header}>
+              <Image
+                source={require('../assets/images/logWithoutBG.png')}
+                resizeMode="contain"
+                style={styles.logo}
+              />
+              <ThemedText style={styles.subtitle}>Admin loan ledger</ThemedText>
+            </View>
 
-        <View style={styles.form}>
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Mobile number</ThemedText>
-            <TextInput
-              keyboardType="phone-pad"
-              value={mobile}
-              onChangeText={setMobile}
-              placeholder="Enter admin mobile"
-              placeholderTextColor="#7A7F87"
-              style={styles.input}
-            />
-          </View>
+            <View style={styles.form}>
+              <View style={styles.field}>
+                <ThemedText style={styles.label}>Mobile number</ThemedText>
+                <TextInput
+                  keyboardType="phone-pad"
+                  value={mobile}
+                  onChangeText={setMobile}
+                  placeholder="Enter admin mobile"
+                  placeholderTextColor="#7A7F87"
+                  style={styles.input}
+                />
+              </View>
 
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Password</ThemedText>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter password"
-              placeholderTextColor="#7A7F87"
-              secureTextEntry
-              style={styles.input}
-            />
-          </View>
+              <View style={styles.field}>
+                <ThemedText style={styles.label}>Password</ThemedText>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter password"
+                  placeholderTextColor="#7A7F87"
+                  secureTextEntry
+                  style={styles.input}
+                />
+              </View>
 
-          {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+              {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
-          <Pressable
-            disabled={isSubmitting}
-            onPress={handleLogin}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-              isSubmitting && styles.buttonDisabled,
-            ]}>
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <ThemedText style={styles.buttonText}>Login</ThemedText>
-            )}
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              <Pressable
+                disabled={isSubmitting}
+                onPress={handleLogin}
+                style={({ pressed }) => [
+                  styles.button,
+                  pressed && styles.buttonPressed,
+                  isSubmitting && styles.buttonDisabled,
+                ]}>
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <ThemedText style={styles.buttonText}>Login</ThemedText>
+                )}
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(247, 247, 243, 0.3)',
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F7F3',
   },
   container: {
     flex: 1,
@@ -122,6 +136,11 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 18,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+    padding: 18,
   },
   field: {
     gap: 8,
