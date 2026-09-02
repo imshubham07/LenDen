@@ -86,7 +86,24 @@ borrowerRouter.get(
     );
 
     return res.json({
-      borrower,
+      borrower: {
+        ...borrower,
+        monthlyPercentage: toNumber(borrower.monthlyPercentage),
+        loans: borrower.loans.map((loan) => ({
+          id: loan.id,
+          amount: toNumber(loan.amount),
+          purpose: loan.purpose,
+          givenDate: loan.givenDate,
+          guarantor: loan.guarantor ?? null,
+          status: loan.status
+        })),
+        payments: borrower.payments.map((payment) => ({
+          id: payment.id,
+          amount: toNumber(payment.amount),
+          paymentDate: payment.paymentDate,
+          note: payment.note ?? null
+        }))
+      },
       summary: {
         totalGiven,
         totalPaid,
