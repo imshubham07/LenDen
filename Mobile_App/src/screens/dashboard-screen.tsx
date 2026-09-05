@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NotesPanel } from '@/components/dashboard/notes-panel';
+import { ProfileOptions } from '@/components/dashboard/profile-options';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -25,7 +28,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BorrowerCard } from '@/components/dashboard/borrower-card';
 import { BottomNav } from '@/components/dashboard/bottom-nav';
 import { DashboardBackground } from '@/components/dashboard/dashboard-background';
-import { ProfileSheet } from '@/components/dashboard/profile-sheet';
 import { useAuth } from '@/context/auth-context';
 import { BorrowerSummary, apiRequest } from '@/lib/api';
 
@@ -42,6 +44,8 @@ type BorrowerFormState = {
   documentNote: string;
 };
 
+type BorrowerFilter = 'all' | 'active' | 'inactive';
+
 const emptyBorrowerForm: BorrowerFormState = {
   name: '',
   fatherOrHusband: '',
@@ -52,20 +56,37 @@ const emptyBorrowerForm: BorrowerFormState = {
 };
 
 export function DashboardScreen() {
-  const { admin, logout, token } = useAuth();
+  const { user, logout, token } = useAuth();
   const router = useRouter();
+  const [hindi, setHindi] = useState(false);
+  const [languageReady, setLanguageReady] = useState(false);
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(`lenden:language:${user?.id}`).then((value) => {
+      if (active) setHindi(value === 'hi');
+    }).catch(() => {}).finally(() => { if (active) setLanguageReady(true); });
+    return () => { active = false; };
+  }, [user?.id]);
+  async function changeLanguage(value: boolean) {
+    await AsyncStorage.setItem(`lenden:language:${user?.id}`, value ? 'hi' : 'en');
+    setHindi(value);
+  }
+  const t = (english: string, translated: string) => hindi ? translated : english;
   const [borrowers, setBorrowers] = useState<BorrowerSummary[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('home');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [borrowerFilter, setBorrowerFilter] = useState<BorrowerFilter>('active');
   const [isAddBorrowerOpen, setIsAddBorrowerOpen] = useState(false);
   const [borrowerForm, setBorrowerForm] = useState<BorrowerFormState>(emptyBorrowerForm);
   const [formError, setFormError] = useState('');
   const [isSubmittingBorrower, setIsSubmittingBorrower] = useState(false);
   const intro = useSharedValue(0);
+  const homeScroll = useRef<ScrollView>(null);
+  const notesPosition = useRef(0);
+  const [noteFocusRequest, setNoteFocusRequest] = useState(0);
 
   const loadBorrowers = useCallback(async () => {
     if (!token) {
@@ -99,7 +120,6 @@ export function DashboardScreen() {
   }
 
   function handleLogout() {
-    setIsProfileOpen(false);
     logout();
   }
 
@@ -197,13 +217,20 @@ export function DashboardScreen() {
     [filteredBorrowers]
   );
 
-  const sections = useMemo(
-    () => [
-      ...(activeBorrowers.length > 0 ? [{ title: 'All Borrowers', data: activeBorrowers }] : []),
-      ...(inactiveBorrowers.length > 0 ? [{ title: 'Inactive Borrowers', data: inactiveBorrowers }] : []),
-    ],
-    [activeBorrowers, inactiveBorrowers]
-  );
+  const borrowerSections = useMemo(() => {
+    if (borrowerFilter === 'all') {
+      return [
+        ...(activeBorrowers.length > 0 ? [{ title: 'Active Borrowers', data: activeBorrowers }] : []),
+        ...(inactiveBorrowers.length > 0 ? [{ title: 'Inactive Borrowers', data: inactiveBorrowers }] : []),
+      ];
+    }
+
+    if (borrowerFilter === 'inactive') {
+      return inactiveBorrowers.length > 0 ? [{ title: 'Inactive Borrowers', data: inactiveBorrowers }] : [];
+    }
+
+    return activeBorrowers.length > 0 ? [{ title: 'Active Borrowers', data: activeBorrowers }] : [];
+  }, [activeBorrowers, borrowerFilter, inactiveBorrowers]);
 
   return (
     <View style={styles.screen}>
@@ -214,53 +241,31 @@ export function DashboardScreen() {
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.brand}>LenDen</Text>
-              <Text style={styles.adminName}>Welcome, {admin?.name ?? 'Admin'}</Text>
+              <Text style={styles.userName}>{t('Welcome', 'स्वागत है')}, {user?.name ?? 'User'}</Text>
             </View>
 
             <View style={styles.actionButtons}>
               <Pressable accessibilityRole="button" onPress={handleAddBorrowerOpen} style={[styles.searchButton, styles.addButton]}>
-                <Text style={styles.searchButtonText}>Add Borrower</Text>
-              </Pressable>
-
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setShowSearch((value) => !value)}
-                style={styles.searchButton}
-              >
-                <Text style={styles.searchButtonText}>Search</Text>
+                <Text style={styles.searchButtonText}>{t('Add Borrower', 'उधारकर्ता जोड़ें')}</Text>
               </Pressable>
             </View>
           </View>
-
-          {showSearch ? (
-            <View style={styles.searchBox}>
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search borrower"
-                placeholderTextColor="#6E7C7B"
-                style={styles.searchInput}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-          ) : null}
         </Animated.View>
 
-        {isLoading ? (
+        {activeTab === 'borrowers' && isLoading ? (
           <View style={styles.centerState}>
             <ActivityIndicator color="#061B35" />
           </View>
-        ) : error ? (
+        ) : activeTab === 'borrowers' && error ? (
           <View style={styles.centerState}>
             <Text style={styles.error}>{error}</Text>
             <Pressable onPress={loadBorrowers} style={styles.retryButton}>
-              <Text style={styles.retryText}>Retry</Text>
+              <Text style={styles.retryText}>{t('Retry', 'फिर कोशिश करें')}</Text>
             </Pressable>
           </View>
-        ) : (
+        ) : activeTab === 'borrowers' ? (
           <SectionList
-            sections={sections}
+            sections={borrowerSections}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -273,8 +278,42 @@ export function DashboardScreen() {
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>No borrowers yet</Text>
-                <Text style={styles.emptyText}>Your borrower list will appear here.</Text>
+                <Text style={styles.emptyTitle}>{t('No borrowers yet', 'अभी कोई उधारकर्ता नहीं')}</Text>
+                <Text style={styles.emptyText}>{t('Your borrower list will appear here.', 'आपके उधारकर्ता यहाँ दिखेंगे।')}</Text>
+              </View>
+            }
+            ListHeaderComponent={
+              <View style={styles.borrowerTools}>
+                <View style={styles.searchBox}>
+                  <TextInput
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Search borrower"
+                    placeholderTextColor="#6E7C7B"
+                    style={styles.searchInput}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+
+                <View style={styles.filterRow}>
+                  {(['active', 'all', 'inactive'] as BorrowerFilter[]).map((filter) => {
+                    const active = borrowerFilter === filter;
+                    const label = filter.charAt(0).toUpperCase() + filter.slice(1);
+
+                    return (
+                      <Pressable
+                        key={filter}
+                        onPress={() => setBorrowerFilter(filter)}
+                        style={[styles.filterChip, active && styles.activeFilterChip]}
+                      >
+                        <Text style={[styles.filterChipText, active && styles.activeFilterChipText]}>
+                          {label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
             }
             renderSectionHeader={({ section }) => (
@@ -292,18 +331,71 @@ export function DashboardScreen() {
             stickySectionHeadersEnabled={false}
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           />
+        ) : activeTab === 'profile' ? (
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.profileContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.profileCard}>
+              <View style={styles.profileAvatar}>
+                <Text style={styles.profileAvatarText}>
+                  {user?.name?.slice(0, 1).toUpperCase() ?? 'A'}
+                </Text>
+              </View>
+              <Text style={styles.profileName}>{user?.name ?? 'User'}</Text>
+              <Text style={styles.profileMobile}>{user?.mobile ?? 'LenDen account'}</Text>
+
+              <View style={styles.profileMetaCard}>
+                <Text style={styles.profileMetaLabel}>{t('Account Type', 'खाता प्रकार')}</Text>
+                <Text style={styles.profileMetaValue}>{t('User', 'उपयोगकर्ता')}</Text>
+              </View>
+
+              {languageReady ? <ProfileOptions hindi={hindi} onLanguageChange={changeLanguage} /> : null}
+
+              <Pressable onPress={handleLogout} style={styles.logoutButton}>
+                <Text style={styles.logoutText}>{t('Logout', 'लॉग आउट')}</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        ) : (
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            ref={homeScroll}
+            contentContainerStyle={styles.homeContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={refresh}
+                tintColor="#061B35"
+                progressBackgroundColor="#FFFFFF"
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.quickTitle}>{t('Quick Actions', 'त्वरित कार्य')}</Text>
+            <Text style={styles.quickSubtitle}>{t('What would you like to do?', 'आप क्या करना चाहते हैं?')}</Text>
+            <View style={styles.quickActions}>
+              {[
+                { icon: '+', title: t('Add Borrower', 'उधारकर्ता जोड़ें'), detail: t('Create a new borrower record', 'नया उधारकर्ता रिकॉर्ड बनाएं'), action: handleAddBorrowerOpen },
+                { icon: '⌕', title: t('Find Borrower', 'उधारकर्ता खोजें'), detail: t('Search records and manage payments', 'रिकॉर्ड खोजें और भुगतान देखें'), action: () => { setSearchQuery(''); setBorrowerFilter('all'); setActiveTab('borrowers'); } },
+                { icon: '✎', title: t('Write a Note', 'नोट लिखें'), detail: t('Save a reminder or a quick thought', 'याद रखने के लिए एक छोटा नोट लिखें'), action: () => { homeScroll.current?.scrollTo({ y: notesPosition.current, animated: true }); setNoteFocusRequest((value) => value + 1); }, disabled: !languageReady },
+              ].map((item) => (
+                <Pressable key={item.icon} accessibilityRole="button" disabled={item.disabled} onPress={item.action} style={[styles.quickAction, item.disabled && { opacity: 0.5 }]}>
+                  <View style={styles.quickIcon}><Text style={styles.quickIconText}>{item.icon}</Text></View>
+                  <View style={styles.quickActionInfo}><Text style={styles.quickActionTitle}>{item.title}</Text><Text style={styles.quickActionDetail}>{item.detail}</Text></View>
+                  <Text style={styles.quickChevron}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+            <View onLayout={(event) => { notesPosition.current = event.nativeEvent.layout.y; }}>
+              {user && languageReady ? <NotesPanel key={user.id} userId={user.id} hindi={hindi} focusRequest={noteFocusRequest} /> : null}
+            </View>
+          </ScrollView>
         )}
 
-        <BottomNav activeTab="home" onProfilePress={() => setIsProfileOpen(true)} />
-      </SafeAreaView>
-
-      {isProfileOpen ? (
-        <ProfileSheet
-          admin={admin}
-          onClose={() => setIsProfileOpen(false)}
-          onLogout={handleLogout}
+        <BottomNav
+          hindi={hindi}
+          activeTab={activeTab}
+          onTabPress={setActiveTab}
         />
-      ) : null}
+      </SafeAreaView>
 
       {isAddBorrowerOpen ? (
         <View style={styles.modalOverlay}>
@@ -315,7 +407,7 @@ export function DashboardScreen() {
           >
             <View style={styles.modalCard}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Add Borrower</Text>
+                <Text style={styles.modalTitle}>{t('Add Borrower', 'उधारकर्ता जोड़ें')}</Text>
                 <Pressable onPress={handleAddBorrowerClose} style={styles.closeButton}>
                   <Text style={styles.closeButtonText}>✕</Text>
                 </Pressable>
@@ -425,7 +517,7 @@ export function DashboardScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F3F7F4',
+    backgroundColor: '#E6EEE8',
   },
   safeArea: {
     flex: 1,
@@ -451,7 +543,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '900',
   },
-  adminName: {
+  userName: {
     color: '#5F6F6A',
     fontSize: 14,
     marginTop: 2,
@@ -480,9 +572,9 @@ const styles = StyleSheet.create({
   searchBox: {
     marginTop: 12,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#EEF5F0',
     borderWidth: 1,
-    borderColor: '#DCE7E2',
+    borderColor: '#BFD0C7',
     paddingHorizontal: 14,
     paddingVertical: 2,
   },
@@ -536,7 +628,132 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
+    paddingTop: 4,
     paddingBottom: 112,
+  },
+  borrowerTools: {
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  filterChip: {
+    minHeight: 36,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEF5F0',
+    borderWidth: 1,
+    borderColor: '#BFD0C7',
+  },
+  activeFilterChip: {
+    backgroundColor: '#061B35',
+    borderColor: '#061B35',
+  },
+  filterChipText: {
+    color: '#5D6963',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  activeFilterChipText: {
+    color: '#FFFFFF',
+  },
+  homeContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 112,
+  },
+  quickTitle: { color: '#061B35', fontSize: 22, fontWeight: '900' },
+  quickSubtitle: { color: '#60736D', fontSize: 13, marginTop: 5, marginBottom: 16 },
+  quickActions: { gap: 10 },
+  quickAction: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 18, backgroundColor: '#EEF5F0', borderWidth: 1, borderColor: '#B9CAC1' },
+  quickIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#D8F4EF', alignItems: 'center', justifyContent: 'center' },
+  quickIconText: { color: '#0E7A61', fontSize: 26, fontWeight: '800' },
+  quickActionInfo: { flex: 1, minWidth: 0 },
+  quickActionTitle: { color: '#061B35', fontSize: 15, fontWeight: '800' },
+  quickActionDetail: { color: '#60736D', fontSize: 12, lineHeight: 18, marginTop: 4 },
+  quickChevron: { color: '#0E7A61', fontSize: 26 },
+  profileContent: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 112,
+  },
+  profileCard: {
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#B9CAC1',
+    backgroundColor: '#EEF5F0',
+    paddingHorizontal: 18,
+    paddingVertical: 24,
+    shadowColor: '#08203A',
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  profileAvatar: {
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EAF8E5',
+    marginBottom: 12,
+  },
+  profileAvatarText: {
+    color: '#0C2A22',
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  profileName: {
+    color: '#111C22',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  profileMobile: {
+    color: '#66706A',
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 5,
+  },
+  profileMetaCard: {
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#C5D5CD',
+    backgroundColor: '#E3ECE7',
+    padding: 14,
+    marginTop: 20,
+  },
+  profileMetaLabel: {
+    color: '#66706A',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  profileMetaValue: {
+    color: '#111C22',
+    fontSize: 16,
+    fontWeight: '900',
+    marginTop: 5,
+  },
+  logoutButton: {
+    width: '100%',
+    minHeight: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#061B35',
+    marginTop: 18,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
   },
   emptyState: {
     alignItems: 'center',

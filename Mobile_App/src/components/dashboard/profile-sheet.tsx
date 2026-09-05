@@ -1,14 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Admin } from '@/lib/api';
+import { User } from '@/lib/api';
 
 type ProfileSheetProps = {
-  admin: Admin | null;
+  user: User | null;
   onClose: () => void;
   onLogout: () => void;
 };
 
-export function ProfileSheet({ admin, onClose, onLogout }: ProfileSheetProps) {
+export function ProfileSheet({ user, onClose, onLogout }: ProfileSheetProps) {
   return (
     <View style={styles.backdrop}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
@@ -16,11 +16,11 @@ export function ProfileSheet({ admin, onClose, onLogout }: ProfileSheetProps) {
         <View style={styles.handle} />
         <View style={styles.profileTop}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{admin?.name?.slice(0, 1).toUpperCase() ?? 'A'}</Text>
+            <Text style={styles.avatarText}>{user?.name?.slice(0, 1).toUpperCase() ?? 'A'}</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.name}>{admin?.name ?? 'Admin'}</Text>
-            <Text style={styles.mobile}>{admin?.mobile ?? 'LenDen account'}</Text>
+            <Text style={styles.name}>{user?.name ?? 'User'}</Text>
+            <Text style={styles.mobile}>{user?.mobile ?? 'LenDen account'}</Text>
           </View>
         </View>
 

@@ -1,3 +1,4 @@
+import { createHmac } from "crypto";
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
@@ -5,14 +6,15 @@ import { redis } from "../lib/redis";
 import { prisma } from "../lib/prisma";
 
 type JwtPayload = {
-  adminId: string;
+  userId: string;
   sessionId: string;
+  credentialVersion: string;
 };
 
 declare global {
   namespace Express {
     interface Request {
-      admin?: {
+      user?: {
         id: string;
         name: string;
         mobile: string;
@@ -22,7 +24,7 @@ declare global {
   }
 }
 
-export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+export async function requireUser(req: Request, res: Response, next: NextFunction) {
   try {
     const token = req.cookies?.token ?? req.headers.authorization?.replace("Bearer ", "");
 
@@ -31,23 +33,30 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
     }
 
     const payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-    const sessionKey = `admin-session:${payload.sessionId}`;
-    const storedAdminId = await redis.get(sessionKey);
+    if (!payload || typeof payload.userId !== "string" || typeof payload.sessionId !== "string") {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    const sessionKey = `user-session:${payload.sessionId}`;
+    const storedUserId = await redis.get(sessionKey);
 
-    if (storedAdminId !== payload.adminId) {
+    if (storedUserId !== payload.userId) {
       return res.status(401).json({ message: "Session expired" });
     }
 
-    const admin = await prisma.admin.findUnique({
-      where: { id: payload.adminId },
-      select: { id: true, name: true, mobile: true }
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, name: true, mobile: true, passwordHash: true }
     });
 
-    if (!admin) {
-      return res.status(401).json({ message: "Admin not found" });
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
     }
 
-    req.admin = admin;
+    const version = createHmac("sha256", env.JWT_SECRET).update(user.passwordHash).digest("hex");
+    if (payload.credentialVersion !== version) {
+      return res.status(401).json({ message: "Password changed. Please log in again." });
+    }
+    req.user = { id: user.id, name: user.name, mobile: user.mobile };
     req.sessionId = payload.sessionId;
     return next();
   } catch {

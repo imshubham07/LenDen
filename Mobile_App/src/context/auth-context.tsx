@@ -1,50 +1,58 @@
 import { createContext, PropsWithChildren, useContext, useMemo, useState } from 'react';
 
-import { Admin, apiRequest } from '@/lib/api';
+import { User, apiRequest } from '@/lib/api';
 
 type LoginResponse = {
   token: string;
-  admin: Admin;
+  user: User;
 };
 
 type AuthContextValue = {
-  admin: Admin | null;
+  user: User | null;
   token: string | null;
   isLoggedIn: boolean;
   login: (mobile: string, password: string) => Promise<void>;
+  signup: (name: string, mobile: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [admin, setAdmin] = useState<Admin | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      admin,
+      user,
       token,
-      isLoggedIn: Boolean(admin && token),
+      isLoggedIn: Boolean(user && token),
       login: async (mobile: string, password: string) => {
-        const response = await apiRequest<LoginResponse>('/api/auth/admin/login', {
+        const response = await apiRequest<LoginResponse>('/api/auth/login', {
           method: 'POST',
           body: { mobile, password },
         });
 
-        setAdmin(response.admin);
+        setUser(response.user);
+        setToken(response.token);
+      },
+      signup: async (name, mobile, password) => {
+        const response = await apiRequest<LoginResponse>('/api/auth/signup', {
+          method: 'POST', body: { name, mobile, password },
+        });
+        setUser(response.user);
         setToken(response.token);
       },
       logout: async () => {
         if (token) {
-          await apiRequest('/api/auth/admin/logout', { method: 'POST', token }).catch(() => null);
+          await apiRequest('/api/auth/logout', { method: 'POST', token }).catch(() => null);
         }
 
-        setAdmin(null);
+        setUser(null);
         setToken(null);
       },
     }),
-    [admin, token]
+    [user, token]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

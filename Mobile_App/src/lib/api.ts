@@ -1,6 +1,6 @@
 const DEFAULT_API_URL = 'http://localhost:4000';
 
-export type Admin = {
+export type User = {
   id: string;
   name: string;
   mobile: string;

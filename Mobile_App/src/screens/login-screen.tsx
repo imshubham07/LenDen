@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -5,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -34,9 +36,13 @@ const RINGS_TOP = [0, 20, 40, 60, 80];
 const RINGS_BOTTOM = [0, 18, 36, 54];
 
 export function LoginScreen() {
-  const { login } = useAuth();
-  const [mobile, setMobile] = useState('8541064068');
-  const [password, setPassword] = useState('admin12345');
+  const router = useRouter();
+  const { login, signup } = useAuth();
+  const [isSignup, setIsSignup] = useState(false);
+  const [name, setName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -114,10 +120,19 @@ export function LoginScreen() {
 
   async function handleLogin() {
     setError('');
+    if (!/^\+?[0-9]{5,15}$/.test(mobile.trim()) || password.length < 6) {
+      setError('Enter a valid mobile number and a password with at least 6 characters.');
+      return;
+    }
+    if (isSignup && (name.trim().length < 2 || password !== confirmPassword)) {
+      setError(name.trim().length < 2 ? 'Enter your full name (at least 2 characters).' : 'Passwords do not match.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
-      await login(mobile.trim(), password);
+      if (isSignup) await signup(name.trim(), mobile.trim(), password);
+      else await login(mobile.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -252,7 +267,7 @@ export function LoginScreen() {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.keyboardArea}>
-          <View style={styles.content}>
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Animated.View style={[styles.logoWrap, logoStyle]}>
               <Animated.View style={[styles.logoGlow, logoGlowStyle]} />
               <Image
@@ -264,11 +279,14 @@ export function LoginScreen() {
 
             <Animated.View style={titleStyle}>
               <View style={styles.titleWrap}>
-                <Text style={styles.title}>Welcome back!</Text>
-                <Text style={styles.subtitle}>Login to continue to your account</Text>
+                <Text style={styles.title}>{isSignup ? 'Create your account' : 'Welcome back!'}</Text>
+                <Text style={styles.subtitle}>{isSignup ? 'Sign up to start managing your ledger' : 'Login to continue to your account'}</Text>
               </View>
 
               <View style={styles.form}>
+                {isSignup && <View style={styles.inputBox}>
+                  <TextInput accessibilityLabel="Full name" style={styles.input} value={name} onChangeText={setName} placeholder="Full name" placeholderTextColor="#98A6BF" autoCapitalize="words" maxLength={100} editable={!isSubmitting} />
+                </View>}
                 <Animated.View
                   style={[
                     styles.inputBox,
@@ -282,7 +300,7 @@ export function LoginScreen() {
                     onChangeText={setMobile}
                     onBlur={() => setFocusedField(null)}
                     onFocus={() => setFocusedField('mobile')}
-                    placeholder="Email or Phone number"
+                    placeholder="Mobile number"
                     placeholderTextColor="#98A6BF"
                     style={styles.input}
                   />
@@ -296,6 +314,9 @@ export function LoginScreen() {
                   ]}>
                   <Text style={styles.inputIcon}>▣</Text>
                   <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isSubmitting}
                     value={password}
                     onChangeText={setPassword}
                     onBlur={() => setFocusedField(null)}
@@ -312,26 +333,24 @@ export function LoginScreen() {
                     <Text style={styles.eyeText}>{isPasswordVisible ? '◉' : '◎'}</Text>
                   </Pressable>
                 </Animated.View>
+                {isSignup && <View style={styles.inputBox}>
+                  <TextInput accessibilityLabel="Confirm password" style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Confirm password" placeholderTextColor="#98A6BF" secureTextEntry={!isPasswordVisible} autoCapitalize="none" editable={!isSubmitting} />
+                </View>}
               </View>
 
               <Animated.View style={[styles.forgotRow, actionStyle]}>
-                {error ? (
-                  <Text style={styles.error}>{error}</Text>
-                ) : (
-                  <Pressable hitSlop={8}>
-                    <Text style={styles.forgot}>Forgot Password?</Text>
-                  </Pressable>
-                )}
+                {!isSignup ? <Pressable accessibilityRole="button" disabled={isSubmitting} onPress={() => router.push('/forgot-password')}><Text style={styles.forgot}>Forgot password?</Text></Pressable> : null}
+                {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
               </Animated.View>
 
               <AnimatedPressable
                 disabled={isSubmitting}
                 onPress={handleLogin}
                 onPressIn={() => {
-                  press.value = withTiming(1, { duration: 100 });
+                  press.set(withTiming(1, { duration: 100 }));
                 }}
                 onPressOut={() => {
-                  press.value = withTiming(0, { duration: 140 });
+                  press.set(withTiming(0, { duration: 140 }));
                 }}
                 style={[styles.loginButton, buttonStyle]}>
                 <Animated.View style={[styles.buttonShimmer, shimmerStyle]} />
@@ -339,19 +358,20 @@ export function LoginScreen() {
                   {isSubmitting ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.loginText}>Login</Text>
+                    <Text style={styles.loginText}>{isSignup ? 'Create account' : 'Login'}</Text>
                   )}
                 </View>
               </AnimatedPressable>
             </Animated.View>
 
             <Animated.View style={[styles.signupRow, actionStyle]}>
-              <Text style={styles.signupText}>Don't have an account?</Text>
-              <Pressable hitSlop={8}>
-                <Text style={styles.signupLink}> Sign up</Text>
+              <Text style={styles.signupText}>{isSignup ? 'Already have an account?' : "Don't have an account?"}</Text>
+              <Pressable accessibilityRole="button" disabled={isSubmitting} hitSlop={8} onPress={() => { setIsSignup(!isSignup); setError(''); setPassword(''); setConfirmPassword(''); }}>
+                <Text style={styles.signupLink}>{isSignup ? ' Log in' : ' Sign up'}</Text>
               </Pressable>
             </Animated.View>
-          </View>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/privacy-policy')} style={{ padding: 16, alignItems: 'center' }}><Text style={styles.signupText}>Free to use · Privacy Policy</Text></Pressable>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -586,7 +606,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 26,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
+    paddingVertical: 24,
     justifyContent: 'center',
   },
   logoWrap: {

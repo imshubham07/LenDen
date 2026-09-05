@@ -1,3 +1,4 @@
+import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -40,11 +41,11 @@ export default function HomeScreen() {
     );
   }
 
-  if (!hasSeenOnboarding) {
-    return <WelcomeScreen onDone={completeOnboarding} />;
-  }
-
-  return isLoggedIn ? <DashboardScreen /> : <LoginScreen />;
+  return (
+    <View style={{ flex: 1, backgroundColor: '#001234' }} onLayout={() => { SplashScreen.hideAsync().catch(() => null); }}>
+      {!hasSeenOnboarding ? <WelcomeScreen onDone={completeOnboarding} /> : isLoggedIn ? <DashboardScreen /> : <LoginScreen />}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
