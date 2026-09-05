@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../../lib/prisma";
-import { requireAdmin } from "../../middleware/auth";
+import { requireUser } from "../../middleware/auth";
 import { asyncHandler } from "../../utils/async-handler";
 import { toNumber } from "../../utils/money";
 import { createBorrowerSchema, updateBorrowerSchema } from "./borrower.schemas";
@@ -8,13 +8,13 @@ import { createBorrowerSchema, updateBorrowerSchema } from "./borrower.schemas";
 export const borrowerRouter = Router();
 type AmountRow = { amount: unknown };
 
-borrowerRouter.use(requireAdmin);
+borrowerRouter.use(requireUser);
 
 borrowerRouter.get(
   "/",
   asyncHandler(async (req, res) => {
     const borrowers = await prisma.borrower.findMany({
-      where: { adminId: req.admin!.id },
+      where: { userId: req.user!.id },
       orderBy: { createdAt: "desc" },
       include: {
         loans: { select: { amount: true } },
@@ -49,7 +49,7 @@ borrowerRouter.post(
   asyncHandler(async (req, res) => {
     const body = createBorrowerSchema.parse(req.body);
     const existing = await prisma.borrower.findFirst({
-      where: { adminId: req.admin!.id, mobile: body.mobile }
+      where: { userId: req.user!.id, mobile: body.mobile }
     });
 
     if (existing) {
@@ -57,7 +57,7 @@ borrowerRouter.post(
     }
 
     const borrower = await prisma.borrower.create({
-      data: { ...body, adminId: req.admin!.id }
+      data: { ...body, userId: req.user!.id }
     });
 
     return res.status(201).json({ borrower });
@@ -68,7 +68,7 @@ borrowerRouter.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const borrower = await prisma.borrower.findFirst({
-      where: { id: req.params.id, adminId: req.admin!.id },
+      where: { id: req.params.id, userId: req.user!.id },
       include: {
         loans: { orderBy: { givenDate: "desc" } },
         payments: { orderBy: { paymentDate: "desc" } }
@@ -95,7 +95,8 @@ borrowerRouter.get(
           purpose: loan.purpose,
           givenDate: loan.givenDate,
           guarantor: loan.guarantor ?? null,
-          status: loan.status
+          status: loan.status,
+          updatedAt: loan.updatedAt
         })),
         payments: borrower.payments.map((payment) => ({
           id: payment.id,
@@ -118,7 +119,7 @@ borrowerRouter.patch(
   asyncHandler(async (req, res) => {
     const body = updateBorrowerSchema.parse(req.body);
     const existing = await prisma.borrower.findFirst({
-      where: { id: req.params.id, adminId: req.admin!.id }
+      where: { id: req.params.id, userId: req.user!.id }
     });
 
     if (!existing) {
@@ -127,7 +128,7 @@ borrowerRouter.patch(
 
     if (body.mobile && body.mobile !== existing.mobile) {
       const duplicate = await prisma.borrower.findFirst({
-        where: { adminId: req.admin!.id, mobile: body.mobile }
+        where: { userId: req.user!.id, mobile: body.mobile }
       });
 
       if (duplicate) {

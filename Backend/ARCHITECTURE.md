@@ -4,8 +4,8 @@
 
 LenDen will have three main parts:
 
-- React Native mobile app for admin use on phone
-- Next.js web app for admin use in browser
+- React Native mobile app for user use on phone
+- Next.js web app for user use in browser
 - Express TypeScript backend shared by both clients
 
 ## Backend Flow
@@ -30,41 +30,41 @@ Redis
 
 ## Backend Modules
 
-- `auth` handles first admin setup, login, logout, and current admin profile.
+- `auth` handles user signup, login, logout, and current user profile.
 - `borrowers` stores borrower profile data and returns borrower summaries/details.
-- `loans` stores every amount given by the admin to a borrower.
+- `loans` stores every amount given by the user to a borrower.
 - `payments` stores every amount returned by a borrower.
 
 ## Data Model
 
 ```text
-Admin
+User
   has many Borrowers
   has many Loans
   has many Payments
 
 Borrower
-  belongs to Admin
+  belongs to User
   has many Loans
   has many Payments
 
 Loan
-  belongs to Admin
+  belongs to User
   belongs to Borrower
 
 Payment
-  belongs to Admin
+  belongs to User
   belongs to Borrower
 ```
 
 ## Authentication
 
-There is no public registration. The first admin can be created once with `/api/auth/admin/setup` or by running the seed command.
+Public registration is available through `/api/auth/signup`. Each user has the same ledger features and can access only their own borrowers, loans, and payments. Prisma maps the User model and userId fields onto the existing Admin table and adminId columns to preserve existing data.
 
 After login:
 
 - Backend creates a Redis session.
-- Backend signs a JWT containing the admin id and session id.
+- Backend signs a JWT containing the user id and session id.
 - Web clients can use the HTTP-only cookie.
 - Mobile clients can store and send the returned token as `Authorization: Bearer <token>`.
 

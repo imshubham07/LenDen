@@ -1,18 +1,47 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 type BottomNavProps = {
+  hindi?: boolean;
   activeTab: string;
-  onProfilePress: () => void;
+  onTabPress: (tab: string) => void;
 };
 
 const tabs = [
-  { key: 'home', icon: '⌂', label: 'Home' },
-  { key: 'borrowers', icon: '◉', label: 'Borrowers' },
-  { key: 'payments', icon: '₹', label: 'Payments' },
-  { key: 'profile', icon: '◎', label: 'Profile' },
+  { key: 'home', label: 'Home' },
+  { key: 'borrowers', label: 'Borrowers' },
+  { key: 'profile', label: 'Profile' },
 ];
 
-export function BottomNav({ activeTab, onProfilePress }: BottomNavProps) {
+function TabIcon({ name, color }: { name: string; color: string }) {
+  if (name === 'home') {
+    return (
+      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+        <Path d="M4 10.8 12 4l8 6.8V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.2Z" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+      </Svg>
+    );
+  }
+
+  if (name === 'borrowers') {
+    return (
+      <Svg width={24} height={22} viewBox="0 0 24 24" fill="none">
+        <Circle cx={9} cy={8} r={3.2} stroke={color} strokeWidth={2} />
+        <Circle cx={17} cy={9} r={2.5} stroke={color} strokeWidth={2} />
+        <Path d="M3.8 19c.8-3.4 2.7-5.1 5.2-5.1s4.4 1.7 5.2 5.1" stroke={color} strokeWidth={2} strokeLinecap="round" />
+        <Path d="M14.6 15.1c2.6.2 4.3 1.5 5.1 3.9" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      </Svg>
+    );
+  }
+
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={8} r={3.5} stroke={color} strokeWidth={2} />
+      <Path d="M5.5 20c1-3.9 3.2-5.8 6.5-5.8s5.5 1.9 6.5 5.8" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function BottomNav({ activeTab, onTabPress, hindi = false }: BottomNavProps) {
   return (
     <View style={styles.bar}>
       {tabs.map((tab) => {
@@ -20,10 +49,10 @@ export function BottomNav({ activeTab, onProfilePress }: BottomNavProps) {
         return (
           <Pressable
             key={tab.key}
-            onPress={tab.key === 'profile' ? onProfilePress : undefined}
-            style={({ pressed }) => [styles.button, active && styles.activeButton, pressed && styles.pressed]}>
-            <Text style={[styles.icon, active && styles.activeIcon]}>{tab.icon}</Text>
-            <Text style={[styles.label, active && styles.activeLabel]}>{tab.label}</Text>
+            onPress={() => onTabPress(tab.key)}
+            style={[styles.button, active && styles.activeButton]}>
+            <TabIcon name={tab.key} color={active ? '#78EC34' : '#AEBBD1'} />
+            <Text style={[styles.label, active && styles.activeLabel]}>{hindi ? ({ home: 'होम', borrowers: 'उधारकर्ता', profile: 'प्रोफ़ाइल' }[tab.key]) : tab.label}</Text>
           </Pressable>
         );
       })}
@@ -61,14 +90,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.82,
-  },
-  icon: {
-    color: '#AEBBD1',
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  activeIcon: {
-    color: '#78EC34',
   },
   label: {
     color: '#AEBBD1',

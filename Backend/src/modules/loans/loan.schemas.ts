@@ -7,3 +7,7 @@ export const createLoanSchema = z.object({
   givenDate: z.coerce.date(),
   guarantor: z.string().optional()
 });
+
+export const updateLoanStatusSchema = z.object({
+  status: z.enum(["ACTIVE", "CLOSED"])
+});

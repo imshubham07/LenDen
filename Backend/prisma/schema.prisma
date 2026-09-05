@@ -12,21 +12,24 @@ enum LoanStatus {
   CLOSED
 }
 
-model Admin {
+model User {
   id           String     @id @default(cuid())
   name         String
   mobile       String     @unique
+  recoveryCodeHash String?
   passwordHash String
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   borrowers    Borrower[]
   loans        Loan[]
   payments     Payment[]
+
+  @@map("Admin")
 }
 
 model Borrower {
   id                String    @id @default(cuid())
-  adminId           String
+  userId            String    @map("adminId")
   name              String
   fatherOrHusband   String
   documentNote      String?
@@ -35,48 +38,48 @@ model Borrower {
   monthlyPercentage Decimal   @db.Decimal(5, 2)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  admin             Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Borrower_adminId_fkey")
   loans             Loan[]
   payments          Payment[]
 
-  @@index([adminId])
+  @@unique([userId, mobile], map: "Borrower_adminId_mobile_key")
+  @@index([userId], map: "Borrower_adminId_idx")
   @@index([name])
   @@index([mobile])
-  @@unique([adminId, mobile])
 }
 
 model Loan {
-  id          String     @id @default(cuid())
-  adminId     String
-  borrowerId  String
-  amount      Decimal    @db.Decimal(12, 2)
-  purpose     String
-  givenDate   DateTime
-  guarantor   String?
-  status      LoanStatus @default(ACTIVE)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  admin       Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  borrower    Borrower   @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
+  id         String     @id @default(cuid())
+  userId     String     @map("adminId")
+  borrowerId String
+  amount     Decimal    @db.Decimal(12, 2)
+  purpose    String
+  givenDate  DateTime
+  guarantor  String?
+  status     LoanStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Loan_adminId_fkey")
+  borrower   Borrower   @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
 
-  @@index([adminId])
+  @@index([userId], map: "Loan_adminId_idx")
   @@index([borrowerId])
   @@index([givenDate])
 }
 
 model Payment {
-  id          String    @id @default(cuid())
-  adminId     String
+  id          String   @id @default(cuid())
+  userId      String   @map("adminId")
   borrowerId  String
-  amount      Decimal   @db.Decimal(12, 2)
+  amount      Decimal  @db.Decimal(12, 2)
   paymentDate DateTime
   note        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  admin       Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  borrower    Borrower  @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Payment_adminId_fkey")
+  borrower    Borrower @relation(fields: [borrowerId], references: [id], onDelete: Cascade)
 
-  @@index([adminId])
+  @@index([userId], map: "Payment_adminId_idx")
   @@index([borrowerId])
   @@index([paymentDate])
 }

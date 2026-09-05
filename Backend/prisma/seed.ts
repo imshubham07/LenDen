@@ -4,18 +4,19 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const name = process.env.ADMIN_NAME ?? "Admin";
-  const mobile = process.env.ADMIN_MOBILE ?? "9999999999";
-  const password = process.env.ADMIN_PASSWORD ?? "admin12345";
+  const name = process.env.USER_NAME;
+  const mobile = process.env.USER_MOBILE;
+  const password = process.env.USER_PASSWORD;
+  if (!name || !mobile || !password) throw new Error("Set USER_NAME, USER_MOBILE and USER_PASSWORD to seed an optional account");
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await prisma.admin.upsert({
+  await prisma.user.upsert({
     where: { mobile },
     update: { name, passwordHash },
     create: { name, mobile, passwordHash }
   });
 
-  console.log(`Admin ready: ${mobile}`);
+  console.log(`User ready: ${mobile}`);
 }
 
 main()

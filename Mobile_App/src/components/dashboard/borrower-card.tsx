@@ -13,114 +13,175 @@ export function BorrowerCard({
   const status = isDue ? 'Active' : 'Inactive';
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <View style={[styles.statusRail, isDue ? styles.dueRail : styles.paidRail]} />
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{borrower.name.slice(0, 1).toUpperCase()}</Text>
-      </View>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.shadowCard, pressed && styles.pressed]}>
+      <View style={styles.card}>
+        <View style={styles.topRow}>
+          <View style={styles.identityRow}>
+            <View style={styles.avatarWrap}>
+              <View style={[styles.avatarShadow, isDue ? styles.activeAvatarShadow : styles.inactiveAvatarShadow]} />
+              <View style={[styles.avatar, isDue ? styles.activeAvatar : styles.inactiveAvatar]}>
+                <Text style={[styles.avatarText, isDue ? styles.activeAvatarText : styles.inactiveAvatarText]}>
+                  {borrower.name.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            </View>
 
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>
-          {borrower.name}
-        </Text>
-        <Text style={styles.village} numberOfLines={1}>
-          {borrower.village}
-        </Text>
-      </View>
+            <View style={styles.info}>
+              <Text style={styles.name} numberOfLines={1}>
+                {borrower.name}
+              </Text>
+              <Text style={styles.village} numberOfLines={1}>
+                {borrower.village}
+              </Text>
+            </View>
+          </View>
 
-      <View style={[styles.statusPill, isDue ? styles.statusDue : styles.statusPaid]}>
-        <Text style={[styles.statusText, isDue ? styles.statusDueText : styles.statusPaidText]}>
-          {status}
-        </Text>
+          <View style={[styles.statusPill, isDue ? styles.statusDue : styles.statusPaid]}>
+            <View style={[styles.statusDot, isDue ? styles.statusDueDot : styles.statusPaidDot]} />
+            <Text style={[styles.statusText, isDue ? styles.statusDueText : styles.statusPaidText]}>
+              {status}
+            </Text>
+          </View>
+        </View>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  shadowCard: {
+    minHeight: 132,
+    borderRadius: 12,
+    backgroundColor: '#DCE8E1',
+    shadowColor: '#061B35',
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 8,
+    marginVertical: 4,
+  },
   card: {
-    minHeight: 78,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#E1EAE5',
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingLeft: 18,
-    paddingRight: 14,
-    gap: 12,
+    flex: 1,
+    minHeight: 132,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#B9CAC1',
+    backgroundColor: '#EEF5F0',
+    paddingVertical: 18,
+    paddingLeft: 20,
+    paddingRight: 16,
+    justifyContent: 'center',
     overflow: 'hidden',
-    shadowColor: '#08203A',
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 3,
   },
   pressed: {
     opacity: 0.82,
   },
-  statusRail: {
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  identityRow: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  avatarWrap: {
+    width: 66,
+    height: 66,
+  },
+  avatarShadow: {
     position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 5,
+    left: 6,
+    top: 9,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
-  dueRail: {
-    backgroundColor: '#FFB84D',
+  activeAvatarShadow: {
+    backgroundColor: '#061B35',
   },
-  paidRail: {
-    backgroundColor: '#78EC34',
+  inactiveAvatarShadow: {
+    backgroundColor: '#A6A6A6',
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EAF8E5',
   },
-  avatarText: {
-    color: '#0C2A22',
-    fontSize: 18,
-    fontWeight: '900',
+  activeAvatar: {
+    backgroundColor: '#CDE8DF',
+  },
+  inactiveAvatar: {
+    backgroundColor: '#D1DAD5',
   },
   info: {
     flex: 1,
+    minWidth: 0,
+  },
+  avatarText: {
+    fontSize: 30,
+    fontWeight: '800',
+  },
+  activeAvatarText: {
+    color: '#071D36',
+  },
+  inactiveAvatarText: {
+    color: '#777777',
   },
   name: {
-    color: '#111C22',
-    fontSize: 17,
-    fontWeight: '900',
+    color: '#061B35',
+    fontSize: 22,
+    fontWeight: '800',
   },
   village: {
-    color: '#66706A',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
+    color: '#40534D',
+    fontSize: 14,
+    fontWeight: '400',
+    marginTop: 5,
   },
   statusPill: {
-    minHeight: 30,
-    borderRadius: 15,
+    minHeight: 34,
+    borderRadius: 17,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 13,
+    gap: 8,
+    borderWidth: 1,
   },
   statusDue: {
-    backgroundColor: '#FFF1D8',
+    backgroundColor: '#D1EAD8',
+    borderColor: '#B7DCC1',
   },
   statusPaid: {
-    backgroundColor: '#E6F8DD',
+    backgroundColor: '#D8E0DB',
+    borderColor: '#C6D1CB',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusDueDot: {
+    backgroundColor: '#35D35C',
+  },
+  statusPaidDot: {
+    backgroundColor: '#9B9B9B',
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '400',
   },
   statusDueText: {
-    color: '#A86405',
+    color: '#26733F',
   },
   statusPaidText: {
-    color: '#168B52',
+    color: '#555555',
   },
 });
