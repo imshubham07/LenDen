@@ -112,6 +112,20 @@ JWT_EXPIRES_IN="7d"
 CORS_ORIGIN="http://localhost:3000,http://localhost:8081"
 ```
 
+For hosted Upstash Redis, you can use REST credentials instead of `REDIS_URL`:
+
+```env
+UPSTASH_REDIS_REST_URL="https://your-database.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
+```
+
+For NeonDB, use the PostgreSQL connection string from the Neon dashboard:
+
+```env
+DATABASE_URL="postgresql://username:password@ep-example.region.aws.neon.tech/dbname?sslmode=require"
+DIRECT_URL="postgresql://username:password@ep-example.region.aws.neon.tech/dbname?sslmode=require"
+```
+
 Start PostgreSQL and Redis, then run the database migration:
 
 ```bash

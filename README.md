@@ -60,6 +60,20 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/lenden?schema=public
 REDIS_URL="redis://localhost:6379"
 ```
 
+For production on Upstash Redis REST, set:
+
+```env
+UPSTASH_REDIS_REST_URL="https://your-database.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
+```
+
+For NeonDB, set `DATABASE_URL` to your Neon PostgreSQL connection string:
+
+```env
+DATABASE_URL="postgresql://username:password@ep-example.region.aws.neon.tech/dbname?sslmode=require"
+DIRECT_URL="postgresql://username:password@ep-example.region.aws.neon.tech/dbname?sslmode=require"
+```
+
 Run Prisma migration:
 
 ```bash

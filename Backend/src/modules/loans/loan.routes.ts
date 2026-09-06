@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { cacheKeys, clearCacheKeys } from "../../lib/cache";
 import { prisma } from "../../lib/prisma";
 import { requireUser } from "../../middleware/auth";
 import { asyncHandler } from "../../utils/async-handler";
@@ -25,6 +26,7 @@ loanRouter.post(
       data: { ...body, userId: req.user!.id }
     });
 
+    await clearCacheKeys(cacheKeys.borrowerList(req.user!.id), cacheKeys.borrowerDetail(req.user!.id, body.borrowerId));
     return res.status(201).json({ loan });
   })
 );
@@ -53,6 +55,7 @@ loanRouter.patch(
       data: { status: body.status }
     });
 
+    await clearCacheKeys(cacheKeys.borrowerList(req.user!.id), cacheKeys.borrowerDetail(req.user!.id, loan.borrowerId));
     return res.json({ loan: updatedLoan });
   })
 );

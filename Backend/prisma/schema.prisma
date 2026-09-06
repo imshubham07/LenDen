@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum LoanStatus {
@@ -23,6 +24,7 @@ model User {
   borrowers    Borrower[]
   loans        Loan[]
   payments     Payment[]
+  notes        Note[]
 
   @@map("Admin")
 }
@@ -82,4 +84,15 @@ model Payment {
   @@index([userId], map: "Payment_adminId_idx")
   @@index([borrowerId])
   @@index([paymentDate])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String   @map("adminId")
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Note_adminId_fkey")
+
+  @@index([userId], map: "Note_adminId_idx")
 }

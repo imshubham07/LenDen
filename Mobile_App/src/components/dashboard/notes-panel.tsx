@@ -1,10 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { apiRequest } from '@/lib/api';
+
 type Note = { id: string; text: string; createdAt: string };
 
-export function NotesPanel({ userId, hindi, focusRequest = 0 }: { userId: string; hindi: boolean; focusRequest?: number }) {
+export function NotesPanel({ hindi, token, focusRequest = 0 }: { hindi: boolean; token: string; focusRequest?: number }) {
   const composerRef = useRef<TextInput>(null);
   useEffect(() => {
     if (focusRequest > 0) composerRef.current?.focus();
@@ -18,27 +19,27 @@ export function NotesPanel({ userId, hindi, focusRequest = 0 }: { userId: string
   const [retry, setRetry] = useState(0);
   const saveInProgress = useRef(false);
   const [loadFailed, setLoadFailed] = useState(false);
-  const key = `lenden:notes:${userId}`;
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem(key).then((value) => {
-      const parsed: unknown = value ? JSON.parse(value) : [];
-      if (!Array.isArray(parsed) || !parsed.every((note) => typeof note?.id === 'string' && typeof note?.text === 'string' && typeof note?.createdAt === 'string')) throw new Error('Invalid notes');
-      if (active) { setNotes(parsed); setLoadFailed(false); setError(''); }
+    apiRequest<{ notes: Note[] }>('/api/notes', { token }).then((response) => {
+      if (active) { setNotes(response.notes); setLoadFailed(false); setError(''); }
     }).catch(() => { if (active) { setLoadFailed(true); setError('load'); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [key, retry]);
+  }, [retry, token]);
 
   async function save() {
     if (!draft.trim() || saveInProgress.current || loading || loadFailed) return;
     saveInProgress.current = true;
     setSaving(true);
     setError('');
-    const next = [{ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: draft.trim(), createdAt: new Date().toISOString() }, ...notes];
     try {
-      await AsyncStorage.setItem(key, JSON.stringify(next));
-      setNotes(next);
+      const response = await apiRequest<{ note: Note }>('/api/notes', {
+        method: 'POST',
+        token,
+        body: { text: draft.trim() },
+      });
+      setNotes([response.note, ...notes]);
       setDraft('');
     } catch {
       setError('save');
@@ -48,7 +49,7 @@ export function NotesPanel({ userId, hindi, focusRequest = 0 }: { userId: string
   return (
     <View style={styles.panel}>
       <View style={styles.heading}><Text style={styles.title}>{hindi ? 'छोटे नोट्स' : 'Quick Notes'}</Text><Text style={styles.count}>{notes.length}</Text></View>
-      <Text style={styles.caption}>{hindi ? 'इस डिवाइस पर आपके लिए सेव किए गए नोट्स' : 'Your notes, saved on this device'}</Text>
+      <Text style={styles.caption}>{hindi ? 'आपके खाते में सेव किए गए नोट्स' : 'Your notes, saved to your account'}</Text>
       <TextInput ref={composerRef} accessibilityLabel={hindi ? 'नया नोट' : 'New note'} placeholder={hindi ? 'एक छोटा नोट लिखें…' : 'Write a short note…'} placeholderTextColor="#6B7C76" multiline maxLength={500} value={draft} onChangeText={setDraft} style={[styles.input, styles.composer]} />
       <View style={styles.heading}><Text style={styles.caption}>{draft.length}/500</Text><Pressable accessibilityRole="button" disabled={!draft.trim() || saving || loading || loadFailed} onPress={save} style={[styles.button, (!draft.trim() || saving || loading || loadFailed) && styles.disabled]}><Text style={styles.buttonText}>{saving ? (hindi ? 'सेव हो रहा है…' : 'Saving…') : (hindi ? 'नोट सेव करें' : 'Save Note')}</Text></Pressable></View>
       {error ? <Text style={styles.error}>{error === 'load'

@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/error-handler";
 import { authRouter } from "./modules/auth/auth.routes";
 import { borrowerRouter } from "./modules/borrowers/borrower.routes";
 import { loanRouter } from "./modules/loans/loan.routes";
+import { noteRouter } from "./modules/notes/note.routes";
 import { paymentRouter } from "./modules/payments/payment.routes";
 
 export const app = express();
@@ -42,6 +43,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/borrowers", borrowerRouter);
 app.use("/api/loans", loanRouter);
+app.use("/api/notes", noteRouter);
 app.use("/api/payments", paymentRouter);
 
 app.use(errorHandler);

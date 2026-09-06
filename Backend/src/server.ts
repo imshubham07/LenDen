@@ -6,8 +6,8 @@ import { app } from "./app";
 async function bootstrap() {
   await connectRedis();
 
-  const server = app.listen(env.PORT, () => {
-    console.log(`Backend running on http://localhost:${env.PORT}`);
+  const server = app.listen(env.PORT, "0.0.0.0", () => {
+    console.log(`Backend running on http://0.0.0.0:${env.PORT}`);
   });
 
   const shutdown = async () => {

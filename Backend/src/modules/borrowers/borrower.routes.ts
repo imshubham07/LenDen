@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { cacheKeys, clearCacheKeys, getCachedJson, setCachedJson } from "../../lib/cache";
 import { prisma } from "../../lib/prisma";
 import { requireUser } from "../../middleware/auth";
 import { asyncHandler } from "../../utils/async-handler";
@@ -13,6 +14,10 @@ borrowerRouter.use(requireUser);
 borrowerRouter.get(
   "/",
   asyncHandler(async (req, res) => {
+    const cacheKey = cacheKeys.borrowerList(req.user!.id);
+    const cached = await getCachedJson(cacheKey);
+    if (cached) return res.json(cached);
+
     const borrowers = await prisma.borrower.findMany({
       where: { userId: req.user!.id },
       orderBy: { createdAt: "desc" },
@@ -22,7 +27,7 @@ borrowerRouter.get(
       }
     });
 
-    return res.json({
+    const payload = {
       borrowers: borrowers.map((borrower) => {
         const totalGiven = borrower.loans.reduce((sum, loan) => sum + toNumber(loan.amount), 0);
         const totalPaid = borrower.payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0);
@@ -40,7 +45,10 @@ borrowerRouter.get(
           createdAt: borrower.createdAt
         };
       })
-    });
+    };
+
+    await setCachedJson(cacheKey, payload);
+    return res.json(payload);
   })
 );
 
@@ -60,6 +68,7 @@ borrowerRouter.post(
       data: { ...body, userId: req.user!.id }
     });
 
+    await clearCacheKeys(cacheKeys.borrowerList(req.user!.id));
     return res.status(201).json({ borrower });
   })
 );
@@ -67,6 +76,10 @@ borrowerRouter.post(
 borrowerRouter.get(
   "/:id",
   asyncHandler(async (req, res) => {
+    const cacheKey = cacheKeys.borrowerDetail(req.user!.id, req.params.id);
+    const cached = await getCachedJson(cacheKey);
+    if (cached) return res.json(cached);
+
     const borrower = await prisma.borrower.findFirst({
       where: { id: req.params.id, userId: req.user!.id },
       include: {
@@ -85,7 +98,7 @@ borrowerRouter.get(
       0
     );
 
-    return res.json({
+    const payload = {
       borrower: {
         ...borrower,
         monthlyPercentage: toNumber(borrower.monthlyPercentage),
@@ -110,7 +123,10 @@ borrowerRouter.get(
         totalPaid,
         outstandingPrincipal: totalGiven - totalPaid
       }
-    });
+    };
+
+    await setCachedJson(cacheKey, payload);
+    return res.json(payload);
   })
 );
 
@@ -141,6 +157,7 @@ borrowerRouter.patch(
       data: body
     });
 
+    await clearCacheKeys(cacheKeys.borrowerList(req.user!.id), cacheKeys.borrowerDetail(req.user!.id, req.params.id));
     return res.json({ borrower });
   })
 );

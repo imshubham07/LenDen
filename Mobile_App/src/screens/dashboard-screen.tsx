@@ -385,7 +385,7 @@ export function DashboardScreen() {
               ))}
             </View>
             <View onLayout={(event) => { notesPosition.current = event.nativeEvent.layout.y; }}>
-              {user && languageReady ? <NotesPanel key={user.id} userId={user.id} hindi={hindi} focusRequest={noteFocusRequest} /> : null}
+              {token && languageReady ? <NotesPanel key={token} token={token} hindi={hindi} focusRequest={noteFocusRequest} /> : null}
             </View>
           </ScrollView>
         )}
