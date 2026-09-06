@@ -15,7 +15,8 @@
         "backgroundColor": "#061B35",
         "foregroundImage": "./src/assets/images/AdaptiveIconForeground.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.imshubham.lenden"
     },
     "web": {
       "output": "static",
