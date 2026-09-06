@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 const API_PORT = '4000';
+const PRODUCTION_API_URL = 'https://lenden-ojfx.onrender.com';
 const LOCALHOST_API_URL = `http://localhost:${API_PORT}`;
 
 function getHostFromUri(uri?: string | null) {
@@ -15,7 +16,8 @@ function getExpoHostApiUrl() {
 }
 
 function getDefaultApiUrl() {
-  if (Platform.OS === 'web') return LOCALHOST_API_URL;
+  if (!__DEV__) return PRODUCTION_API_URL;
+  if (Platform.OS === 'web') return PRODUCTION_API_URL;
   return getExpoHostApiUrl() ?? (Platform.OS === 'android' ? `http://10.0.2.2:${API_PORT}` : LOCALHOST_API_URL);
 }
 
