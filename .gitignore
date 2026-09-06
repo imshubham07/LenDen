@@ -11,6 +11,7 @@ AGENTS.md
 .codex
 .agents
 # local documents and API testing exports
+docs/
 *.pdf
 *.postman_collection.json
 *.postman_environment.json
