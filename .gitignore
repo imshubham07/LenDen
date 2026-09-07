@@ -28,3 +28,8 @@ Mobile_App/dist/
 Mobile_App/web-build/
 Mobile_app/node_modules/
 Mobile_app/.next/
+
+# Next.js project website
+Web/.next/
+Web/out/
+Web/*.tsbuildinfo

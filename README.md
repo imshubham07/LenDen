@@ -1,179 +1,200 @@
 # LenDen
 
-LenDen is a full-stack loan ledger app for managing borrowers, money given, repayments, and outstanding balances.
+A loan ledger app for keeping track of borrowers, money lent, repayments, and outstanding balances. Each user has their own account and ledger.
 
-The app is designed for an user account workflow. Anyone can sign up with their name, mobile number, and password. Each account owns its own ledger. The user can log in, create borrower profiles, add money given to borrowers, record money returned by borrowers, and view borrower details with balance summaries.
+[Download Android APK](https://github.com/imshubham07/LenDen/releases/download/v1.0.0/LenDen-v1.0.0.apk) · [Report a bug](https://github.com/imshubham07/LenDen/issues) · [Contribute](#contributing)
 
-## Tech Stack
+## Features
 
-- Backend: Express, TypeScript, Prisma ORM
-- Database: PostgreSQL
-- Sessions: Redis
-- Mobile App: Expo React Native
-- Web App: Next.js planned
+- Sign up with your name, mobile number, and password.
+- Sign in securely with account-specific ledgers and Redis-backed sessions.
+- Recover your account using a recovery code.
+- Create and update borrower profiles, with unique mobile numbers within your account.
+- Record money lent and repayments, and view transaction details.
+- See borrower summaries and outstanding principal balances.
+- Explore the project through a responsive website with an interactive sample ledger.
 
-## Project Structure
+The current balance calculation is:
+
+```text
+Outstanding principal = total money lent − total repayments
+```
+
+A monthly percentage is stored on borrower profiles, but interest is not yet included in balance calculations.
+
+## Download for Android
+
+Download [LenDen v1.0.0 for Android](https://github.com/imshubham07/LenDen/releases/download/v1.0.0/LenDen-v1.0.0.apk), or open [GitHub Releases](https://github.com/imshubham07/LenDen/releases) to view release notes and checksums. Transfer it to your Android device, open it, and allow installation from your browser or file manager if Android prompts you.
+
+The current Android build is **1.0.0** and requires **Android 7.0 or newer**. Create an account in the app to start your ledger. An internet connection is required to use the backend.
+
+## Tech stack
+
+| Component | Technologies |
+| --- | --- |
+| Mobile app | Expo, React Native, TypeScript, Expo Router, NativeWind |
+| Backend | Node.js, Express, TypeScript, Prisma, Zod |
+| Database | PostgreSQL |
+| Authentication | JWT, password hashing, Redis-backed sessions |
+| Project website | Next.js, React, TypeScript |
+
+## Project structure
 
 ```text
 LenDen/
-  Backend/      Express TypeScript API
-  Mobile_App/   Expo React Native app
-  Web/          Next.js web app folder
+├── Backend/       API, database schema, migrations, and authentication tests
+├── Mobile_App/    Expo app and native Android project
+├── Web/           Next.js project website and sample ledger
+└── LICENSE        MIT license
 ```
 
-## Current Features
+## Local development
 
-- User setup
-- User login and logout
-- Redis-backed user sessions
-- Borrower create, list, detail, and update
-- Unique borrower mobile number per user
-- Add money given by user
-- Add money returned by borrower
-- Outstanding principal calculation
-- Postman testing guide
+### Prerequisites
 
-## Backend Setup
+- Node.js 22.13+ on the 22.x line, or a version supported by the packages in the component you are working on, and npm.
+- PostgreSQL and Redis, running locally or through hosted services.
+- Android Studio, an Android SDK, and JDK 17 for native Android builds.
+- Docker, optionally, for the local database and Redis commands below.
 
-Go to the backend folder:
+Clone the repository:
 
 ```bash
-cd Backend
+git clone https://github.com/imshubham07/LenDen.git
+cd LenDen
 ```
 
-Install dependencies:
+Run each component in a separate terminal. Paths below start from the repository root.
+
+### 1. Start PostgreSQL and Redis
+
+If you already have these services, use their connection URLs instead. Otherwise:
 
 ```bash
-npm install
-```
-
-Create `.env` from the example:
-
-```bash
-cp .env.example .env
-```
-
-Use these local service URLs:
-
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/lenden?schema=public"
-REDIS_URL="redis://localhost:6379"
-```
-
-For production on Upstash Redis REST, set:
-
-```env
-UPSTASH_REDIS_REST_URL="https://your-database.upstash.io"
-UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
-```
-
-For NeonDB, set `DATABASE_URL` to your Neon PostgreSQL connection string:
-
-```env
-DATABASE_URL="postgresql://username:password@ep-example.region.aws.neon.tech/dbname?sslmode=require"
-DIRECT_URL="postgresql://username:password@ep-example.region.aws.neon.tech/dbname?sslmode=require"
-```
-
-Run Prisma migration:
-
-```bash
-npm run prisma:migrate
-```
-
-Create an account using Sign up in the mobile app; no seed account is required.
-
-Start the backend:
-
-```bash
-npm run dev
-```
-
-Backend runs on:
-
-```text
-http://localhost:4000
-```
-
-## Docker Services
-
-PostgreSQL can run with Docker:
-
-```bash
-docker run -d \
-  --name lenden-postgres \
-  --network lenden-network \
+docker run -d --name lenden-postgres \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=lenden \
-  -p 5432:5432 \
+  -p 127.0.0.1:5432:5432 \
   -v lenden-postgres-data:/var/lib/postgresql/data \
-  postgres:16
+  postgres:16-alpine
+
+docker run -d --name lenden-redis \
+  -p 127.0.0.1:6379:6379 \
+  -v lenden-redis-data:/data \
+  redis:7-alpine redis-server --appendonly yes
 ```
 
-Redis can use local Redis on:
+For later sessions, restart the existing containers with `docker start lenden-postgres lenden-redis`.
 
-```text
-redis://localhost:6379
+### 2. Start the backend
+
+```bash
+cd Backend
+npm ci
+cp .env.example .env
 ```
 
-Or Docker Redis on another port if local Redis already uses `6379`.
+Edit `Backend/.env` to match your services. For the local containers above:
 
-## Mobile App Setup
+```env
+NODE_ENV=development
+PORT=4000
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/lenden?schema=public"
+DIRECT_URL="postgresql://postgres:postgres@localhost:5432/lenden?schema=public"
+REDIS_URL="redis://localhost:6379"
+JWT_SECRET="replace-with-your-own-long-random-secret"
+JWT_EXPIRES_IN="7d"
+CORS_ORIGIN="http://localhost:3000,http://localhost:8081"
+```
 
-Go to the mobile app folder:
+Use your own JWT secret of at least 12 characters. Then generate the client, apply migrations, and start the API:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run dev
+```
+
+The API runs at `http://localhost:4000`; check it at `http://localhost:4000/health`. Sign up through the mobile app; no seed account is required.
+
+For hosted PostgreSQL or Upstash Redis configuration and API details, see [Backend/README.md](Backend/README.md).
+
+### 3. Start the mobile app
 
 ```bash
 cd Mobile_App
+npm ci
 ```
 
-Install dependencies:
+Create `Mobile_App/.env` and point the app at your development backend:
+
+```env
+EXPO_PUBLIC_API_URL=http://10.0.2.2:4000
+```
+
+Use `10.0.2.2` for the Android Studio emulator, your computer's LAN IP for a physical phone on the same network, or `localhost` for a browser or iOS simulator. Restart Expo after changing this value. Setting it explicitly ensures development uses your chosen backend; release builds otherwise default to the deployed API.
 
 ```bash
-npm install
+npm run android   # Build and launch on an Android emulator or connected device
 ```
 
-Start Expo:
+Other commands:
 
 ```bash
-npm run start
+npm start         # Start the Expo development server
+npm run ios       # Build and launch on iOS; requires macOS and Xcode
+npm run web       # Run the Expo app in a browser
 ```
 
-Run on Android:
+To build an Android release APK locally after configuring the Android SDK:
 
 ```bash
-npm run android
+cd Mobile_App/android  # From the repository root
+./gradlew assembleRelease
 ```
 
-Run on web:
+The output is `Mobile_App/android/app/build/outputs/apk/release/app-release.apk`. The checked-in Gradle configuration signs release builds with the development keystore; configure your own release signing key for production distribution. The Expo EAS `preview` profile in [Mobile_App/eas.json](Mobile_App/eas.json) is also configured to produce an APK.
+
+### 4. Start the project website
 
 ```bash
-npm run web
+cd Web
+npm ci
+npm run dev
 ```
 
-## API Testing
+Open `http://localhost:3000`. The website's ledger uses sample data held in memory. The mobile app provides the full ledger connected to the backend. See [Web/README.md](Web/README.md) for website details and production commands.
 
-Backend API testing docs are available in:
+## Development checks
 
-```text
-Backend/POSTMAN_TESTING.md
-```
+Run the checks for the component you changed:
 
-The Postman collection export is ignored by Git because it is a local testing artifact.
+| Component | Commands, run inside its folder |
+| --- | --- |
+| Backend | `npm test` (builds TypeScript and runs authentication tests) |
+| Mobile app | `npm run lint` and `npx tsc --noEmit` |
+| Website | `npm run lint`, `npm run typecheck`, and `npm run build` |
 
-## Amount Calculation
+For mobile UI changes, also verify the affected flow on an emulator or device. Check the native splash screen in a release build, since Expo Go uses its own launch UI.
 
-Current calculation:
+## Contributing
 
-```text
-outstandingPrincipal = total amount given by user - total amount paid by borrower
-```
+**Everyone is welcome to contribute — feel free to help!** Whether you are fixing your first typo or building a feature, contributions of all sizes are appreciated.
 
-Monthly percentage is stored on each borrower profile. Interest calculation will be added after the exact business rule is finalized.
+You can help with bug fixes, UI improvements, accessibility, documentation, tests, or feature ideas. Check the [issues](https://github.com/imshubham07/LenDen/issues) for existing discussions, or open an issue to describe a bug or suggest an improvement. For larger changes, discuss the approach in an issue first.
 
-## User authentication update
+1. Fork the repository and clone your fork.
+2. Create a branch: `git checkout -b feat/your-change` or `git checkout -b fix/your-fix`.
+3. Follow the setup steps for the component you want to work on.
+4. Make a focused change, follow the surrounding code style, and update documentation or tests where needed.
+5. Run the relevant development checks and manually verify changed behavior.
+6. Commit and push your branch, then open a pull request against `master`.
 
-Use `POST /api/auth/signup` with `{ name, mobile, password }`, or `POST /api/auth/login` with `{ mobile, password }`. Both return `{ token, user }`. Send the token as `Authorization: Bearer <token>` for ledger requests, `GET /api/auth/me`, and `POST /api/auth/logout`.
+In your pull request, explain what changed and why, link any related issue, and include testing details. Add screenshots or a short recording for visual changes. Keep credentials, `.env` files, personal ledger data, and generated build files out of commits; distribute APKs through GitHub Releases.
 
-Existing accounts and ledger records are preserved through Prisma table/column mappings; no database migration is needed. Run `npm run prisma:generate` and restart the backend after updating. Previous sessions require signing in again. The old admin auth endpoints have been removed.
+Please be respectful and constructive in issues, reviews, and discussions. If you are new to the project, you are welcome to ask for guidance in an issue.
 
-The mobile startup no longer mounts the Expo logo overlay. The native LenDen splash stays visible until onboarding storage has loaded and the first screen has laid out. Verify native splash appearance in a release build, since Expo Go has its own launch UI.
+## License
+
+LenDen is available under the [MIT License](LICENSE).
