@@ -18,8 +18,7 @@ import { Github } from "../components/github-icon";
 import brandLogo from "./images/logWithoutBG.png";
 
 const github = "https://github.com/imshubham07/LenDen";
-const androidApkUrl =
-  "https://github.com/imshubham07/LenDen/releases/download/v1.0.0/LenDen-v1.0.0.apk";
+const androidApkUrl = "/download";
 
 function Brand({ footer = false }: { footer?: boolean }) {
   return (
@@ -88,8 +87,7 @@ export default function Home() {
               <a
                 className="button button-light"
                 href={androidApkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                download="lenden.apk"
               >
                 <Smartphone size={18} /> Download Android APK
               </a>

@@ -2,7 +2,7 @@
 
 A loan ledger app for keeping track of borrowers, money lent, repayments, and outstanding balances. Each user has their own account and ledger.
 
-[Download Android APK](https://github.com/imshubham07/LenDen/releases/download/v1.0.0/LenDen-v1.0.0.apk) · [Report a bug](https://github.com/imshubham07/LenDen/issues) · [Contribute](#contributing)
+[Download Android APK](https://github.com/imshubham07/LenDen/releases/download/v1.0.0/lenden.apk) · [Report a bug](https://github.com/imshubham07/LenDen/issues) · [Contribute](#contributing)
 
 ## Features
 
@@ -22,9 +22,11 @@ Outstanding principal = total money lent − total repayments
 
 A monthly percentage is stored on borrower profiles, but interest is not yet included in balance calculations.
 
-## Download for Android
+## Download For Android
 
-Download [LenDen v1.0.0 for Android](https://github.com/imshubham07/LenDen/releases/download/v1.0.0/LenDen-v1.0.0.apk), or open [GitHub Releases](https://github.com/imshubham07/LenDen/releases) to view release notes and checksums. Transfer it to your Android device, open it, and allow installation from your browser or file manager if Android prompts you.
+Download [LenDen v1.0.0 for Android](https://github.com/imshubham07/LenDen/releases/download/v1.0.0/lenden.apk), or use the **Download Android APK** button on the project website. The website uses `/download` to send visitors directly to the APK file in GitHub Releases, so they download the APK without needing to browse the repository.
+
+Transfer the APK to your Android device, open it, and allow installation from your browser or file manager if Android prompts you.
 
 The current Android build is **1.0.0** and requires **Android 7.0 or newer**. Create an account in the app to start your ledger. An internet connection is required to use the backend.
 
@@ -154,7 +156,7 @@ cd Mobile_App/android  # From the repository root
 ./gradlew assembleRelease
 ```
 
-The output is `Mobile_App/android/app/build/outputs/apk/release/app-release.apk`. The checked-in Gradle configuration signs release builds with the development keystore; configure your own release signing key for production distribution. The Expo EAS `preview` profile in [Mobile_App/eas.json](Mobile_App/eas.json) is also configured to produce an APK.
+The current release output in this repo is `Mobile_App/android/app/build/outputs/apk/release/lenden.apk`. After rebuilding a release, upload the updated APK to GitHub Releases and update the URL in `Web/app/download/route.ts` if the version or filename changes. The checked-in Gradle configuration signs release builds with the development keystore; configure your own release signing key for production distribution. The Expo EAS `preview` profile in [Mobile_App/eas.json](Mobile_App/eas.json) is also configured to produce an APK.
 
 ### 4. Start the project website
 
@@ -191,7 +193,7 @@ You can help with bug fixes, UI improvements, accessibility, documentation, test
 5. Run the relevant development checks and manually verify changed behavior.
 6. Commit and push your branch, then open a pull request against `master`.
 
-In your pull request, explain what changed and why, link any related issue, and include testing details. Add screenshots or a short recording for visual changes. Keep credentials, `.env` files, personal ledger data, and generated build files out of commits; distribute APKs through GitHub Releases.
+In your pull request, explain what changed and why, link any related issue, and include testing details. Add screenshots or a short recording for visual changes. Keep credentials, `.env` files, personal ledger data, and generated build files out of commits. Distribute APKs through GitHub Releases.
 
 Please be respectful and constructive in issues, reviews, and discussions. If you are new to the project, you are welcome to ask for guidance in an issue.
 

@@ -28,5 +28,6 @@ npm start
 - The preview uses fictional borrowers and in-memory sample transactions. Select a borrower, record repayments, or reset the demo. It does not connect to the API or persist data.
 - Fonts are bundled locally through Fontsource; no external font requests or API keys are needed.
 - This is a project website. The full ledger lives in the Expo mobile app.
+- The Android download button points to `/download`, which redirects to the APK file in GitHub Releases. Update the URL in `app/download/route.ts` when publishing a new release.
 - Deploy with `Web` as the project root on a Next.js-compatible host.
 - Project links and copy are in `app/page.tsx`; metadata is in `app/layout.tsx`; styles are in `app/globals.css`.
